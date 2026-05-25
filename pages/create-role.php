@@ -13,9 +13,7 @@ if (isset($_POST['simpan'])) {
 }
 
 $id = $_GET['edit'] ?? '';
-
 $query = mysqli_query($koneksi, "SELECT * FROM roles WHERE id='$id'");
-
 $edit = mysqli_fetch_assoc($query);
 
 if (isset($_POST['edit'])) {
@@ -24,15 +22,17 @@ if (isset($_POST['edit'])) {
     $status = htmlspecialchars($_POST['is_active']);
     $description = htmlspecialchars($_POST['description']);
 
-    mysqli_query($koneksi, "UPDATE roles
+    $update = mysqli_query($koneksi, "UPDATE roles
     SET
     name='$name',
     is_active='$status',
     description='$description'
     WHERE id='$id'");
 
-    header('location:?page=role');
-    exit;
+    if ($update) {
+        header('location:?page=role&status=success');
+        exit();
+    }
 }
 ?>
 

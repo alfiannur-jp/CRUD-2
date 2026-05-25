@@ -1,3 +1,15 @@
+<?php
+$selectUser = mysqli_query($koneksi, "SELECT * FROM categories ORDER BY id DESC "); //5,4,3,2,1
+$rows = mysqli_fetch_all($selectUser, MYSQLI_ASSOC);
+
+if (isset($_GET['delete'])) {
+  $id = $_GET['delete'] ?? 0;
+  $delete = mysqli_query($koneksi, "DELETE FROM categories WHERE id='$id'");
+  header("location:?page=category");
+  exit();
+}
+?>
+
 <div class="card">
   <h5 class="card-header">
     Manage Category
@@ -23,11 +35,22 @@
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <th></th>
-            <th></th>
-            <th></th>
-          </tr>
+          <?php
+          foreach ($rows as $index => $r) {
+          ?>
+            <tr>
+              <td><?= $index + 1 ?></td>
+              <td><?= $r['category_name'] ?></td>
+              <td>
+                <a href="?page=create-category&edit=<?= $r['id'] ?>" class="btn btn-success">Edit</a>
+                <form action="?page=category&delete=<?= $r['id'] ?> ?>" method="post" class="d-inline">
+                  <button class="btn btn-danger" onclick="return confirm('Sure Delete?')">Delete</button>
+                </form>
+              </td>
+            </tr>
+          <?php
+          }
+          ?>
         </tbody>
       </table>
     </div>

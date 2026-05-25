@@ -13,6 +13,24 @@ if (isset($_POST['simpan'])) {
     exit();
   }
 }
+
+$id = $_GET['edit'] ?? '';
+$query = mysqli_query($koneksi, "SELECT * FROM categories WHERE id='$id'");
+$edit = mysqli_fetch_assoc($query);
+
+if (isset($_POST['edit'])) {
+  $category_name = htmlspecialchars($_POST['category_name']);
+  $cek = mysqli_query($koneksi, "SELECT category_name FROM categories WHERE category_name='$category_name'");
+  if (mysqli_num_rows($cek) > 0) {
+    header("location:?page=create-category&status=category-exist");
+  }
+  $query = mysqli_query($koneksi, "UPDATE categories SET category_name = '$category_name' WHERE id='$id'");
+  if ($query) {
+    header('location:?page=category&status=success');
+    exit();
+  }
+  exit;
+}
 ?>
 
 <div class="card">
@@ -30,7 +48,7 @@ if (isset($_POST['simpan'])) {
       }
       ?>
       <br>
-      <button type="submit" name="simpan" class="btn btn-primary mt-2">Create</button>
+      <button type="submit" name="<?= isset($_GET['edit']) ? 'edit' : 'simpan' ?>" class="btn btn-primary mt-2"><?= isset($_GET['edit']) ? 'Edit' : 'Save' ?></button>
       <a href="?page=category" class="btn btn-secondary mt-2">Cancel</a>
     </form>
   </div>
