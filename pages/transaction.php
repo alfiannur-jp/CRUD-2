@@ -1,299 +1,471 @@
-<!DOCTYPE html>
-<html lang="en">
+<?php
+$selectCategory = mysqli_query($koneksi, "SELECT * FROM categories ORDER BY id ASC");
+$categories = mysqli_fetch_all($selectCategory, MYSQLI_ASSOC);
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-  <meta http-equiv="x-ua-compatible" content="ie=edge" />
-  <title>Material Design for Bootstrap</title>
-  <!-- MDB icon -->
-  <link rel="icon" href="img/mdb-favicon.ico" type="image/x-icon" />
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css" />
-  <!-- Google Fonts Roboto -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" />
-  <!-- MDB -->
-  <link rel="stylesheet" href="css/bootstrap-shopping-carts.min.css" />
-</head>
+$selectProduct = mysqli_query($koneksi, "SELECT products.*, categories.category_name FROM products LEFT JOIN categories ON products.category_id = categories.id WHERE products.is_active = 1 ORDER BY id DESC");
+$products = mysqli_fetch_all($selectProduct, MYSQLI_ASSOC);
 
-<body>
-  <!-- Start your project here-->
-  <style>
-    @media (min-width: 1025px) {
-      .h-custom {
-        height: 100vh !important;
+// where id_category = $categories
+?>
+<div class="row">
+
+  <div class="col-lg-8 p-4">
+
+    <ul class="nav nav-tabs" role="tablist">
+      <?php
+      foreach ($categories as $key => $cat) {
+      ?>
+        <li class="nav-item">
+          <button class="nav-link <?= $key === 0 ? 'active' : '' ?>"
+            data-bs-toggle="tab"
+            data-bs-target="#tab-pane-<?= $cat['id'] ?>">
+            <?= $cat['category_name'] ?>
+          </button>
+        </li>
+      <?php
       }
-    }
+      ?>
+    </ul>
 
-    .number-input input[type="number"] {
-      -webkit-appearance: textfield;
-      -moz-appearance: textfield;
-      appearance: textfield;
-    }
+    <div class="tab-content mt-3">
 
-    .number-input input[type=number]::-webkit-inner-spin-button,
-    .number-input input[type=number]::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-    }
+      <?php
+      foreach ($categories as $key => $cat) {
+      ?>
+        <div class="tab-pane fade <?= $key === 0 ? 'show active' : '' ?>" id="tab-pane-<?= $cat['id'] ?>">
 
-    .number-input button {
-      -webkit-appearance: none;
-      background-color: transparent;
-      border: none;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      margin: 0;
-      position: relative;
-    }
+          <div class="d-flex justify-content-between align-items-center mb-3">
 
-    .number-input button:before,
-    .number-input button:after {
-      display: inline-block;
-      position: absolute;
-      content: '';
-      height: 2px;
-      transform: translate(-50%, -50%);
-    }
+            <div class="fw-semibold">
+              <?php
+              $count = 0;
+              foreach ($products as $p) {
+                if ($p['category_id'] == $cat['id']) {
+                  $count++;
+                }
+                if ($key == 0) {
+                  $count++;
+                }
+              }
+              ?>
+              <span class="fs-5"><?= $count ?></span> Products
+            </div>
 
-    .number-input button.plus:after {
-      transform: translate(-50%, -50%) rotate(90deg);
-    }
+            <div class="flex-grow-1 mx-3">
+              <input type="text" class="form-control" placeholder="Search">
+            </div>
 
-    .number-input input[type=number] {
-      text-align: center;
-    }
+          </div>
 
-    .number-input.number-input {
-      border: 1px solid #ced4da;
-      width: 10rem;
-      border-radius: .25rem;
-    }
+          <div class="row g-3">
 
-    .number-input.number-input button {
-      width: 2.6rem;
-      height: .7rem;
-    }
+            <?php
+            foreach ($products as $product) {
+              if ($product['category_id'] == $cat['id'] || $key == 0) {
+            ?>
+                <div class="col-md-4">
 
-    .number-input.number-input button.minus {
-      padding-left: 10px;
-    }
+                  <div class="card product-card h-100 shadow-sm">
 
-    .number-input.number-input button:before,
-    .number-input.number-input button:after {
-      width: .7rem;
-      background-color: #495057;
-    }
+                    <div class="p-3 text-center">
 
-    .number-input.number-input input[type=number] {
-      max-width: 4rem;
-      padding: .5rem;
-      border: 1px solid #ced4da;
-      border-width: 0 1px;
-      font-size: 1rem;
-      height: 2rem;
-      color: #495057;
-    }
+                      <h6 class="mb-1"><?= $product['product_name'] ?></h6>
 
-    @media not all and (min-resolution:.001dpcm) {
-      @supports (-webkit-appearance: none) and (stroke-color:transparent) {
+                      <small class="text-muted">
+                        <?= $product['category_name'] ?>
+                      </small>
 
-        .number-input.def-number-input.safari_only button:before,
-        .number-input.def-number-input.safari_only button:after {
-          margin-top: -.3rem;
-        }
-      }
-    }
-
-    .shopping-cart .def-number-input.number-input {
-      border: none;
-    }
-
-    .shopping-cart .def-number-input.number-input input[type=number] {
-      max-width: 2rem;
-      border: none;
-    }
-
-    .shopping-cart .def-number-input.number-input input[type=number].black-text,
-    .shopping-cart .def-number-input.number-input input.btn.btn-link[type=number],
-    .shopping-cart .def-number-input.number-input input.md-toast-close-button[type=number]:hover,
-    .shopping-cart .def-number-input.number-input input.md-toast-close-button[type=number]:focus {
-      color: #212529 !important;
-    }
-
-    .shopping-cart .def-number-input.number-input button {
-      width: 1rem;
-    }
-
-    .shopping-cart .def-number-input.number-input button:before,
-    .shopping-cart .def-number-input.number-input button:after {
-      width: .5rem;
-    }
-
-    .shopping-cart .def-number-input.number-input button.minus:before,
-    .shopping-cart .def-number-input.number-input button.minus:after {
-      background-color: #9e9e9e;
-    }
-
-    .shopping-cart .def-number-input.number-input button.plus:before,
-    .shopping-cart .def-number-input.number-input button.plus:after {
-      background-color: #4285f4;
-    }
-  </style>
-  <section class="h-100 h-custom" style="background-color: #eee;">
-    <div class="container h-100 py-5">
-      <div class="row d-flex justify-content-center align-items-center h-100">
-        <div class="col">
-          <div class="card shopping-cart" style="border-radius: 15px;">
-            <div class="card-body text-black">
-
-              <div class="row">
-                <div class="col-lg-6 px-5 py-4">
-
-                  <h3 class="mb-5 pt-2 text-center fw-bold text-uppercase">Your products</h3>
-
-                  <div class="d-flex align-items-center mb-5">
-                    <div class="flex-shrink-0">
-                      <img src="https://mdbcdn.b-cdn.net/img/Photos/Horizontal/E-commerce/Products/13.webp"
-                        class="img-fluid" style="width: 150px;" alt="Generic placeholder image">
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                      <a href="#!" class="float-end text-black"><i class="fas fa-times"></i></a>
-                      <h5 class="text-primary">Samsung Galaxy M11 64GB</h5>
-                      <h6 style="color: #9e9e9e;">Color: white</h6>
-                      <div class="d-flex align-items-center">
-                        <p class="fw-bold mb-0 me-5 pe-3">799$</p>
-                        <div class="def-number-input number-input safari_only">
-                          <button onclick="this.parentNode.querySelector('input[type=number]').stepDown()"
-                            class="minus"></button>
-                          <input class="quantity fw-bold text-black" min="0" name="quantity" value="1"
-                            type="number">
-                          <button onclick="this.parentNode.querySelector('input[type=number]').stepUp()"
-                            class="plus"></button>
-                        </div>
+                      <div class="mt-2">
+                        <img src="assets/uploads/<?= $product['products_image'] ?>"
+                          class="img-fluid" style="max-height:150px; object-fit:cover;">
                       </div>
-                    </div>
-                  </div>
 
-                  <div class="d-flex align-items-center mb-5">
-                    <div class="flex-shrink-0">
-                      <img src="https://mdbcdn.b-cdn.net/img/Photos/Horizontal/E-commerce/Products/6.webp"
-                        class="img-fluid" style="width: 150px;" alt="Generic placeholder image">
                     </div>
-                    <div class="flex-grow-1 ms-3">
-                      <a href="#!" class="float-end text-black"><i class="fas fa-times"></i></a>
-                      <h5 class="text-primary">Headphones Bose 35 II</h5>
-                      <h6 style="color: #9e9e9e;">Color: Red</h6>
-                      <div class="d-flex align-items-center">
-                        <p class="fw-bold mb-0 me-5 pe-3">239$</p>
-                        <div class="def-number-input number-input safari_only">
-                          <button onclick="this.parentNode.querySelector('input[type=number]').stepDown()"
-                            class="minus"></button>
-                          <input class="quantity fw-bold text-black" min="0" name="quantity" value="1"
-                            type="number">
-                          <button onclick="this.parentNode.querySelector('input[type=number]').stepUp()"
-                            class="plus"></button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div class="d-flex align-items-center mb-5">
-                    <div class="flex-shrink-0">
-                      <img src="https://mdbcdn.b-cdn.net/img/Photos/Horizontal/E-commerce/Products/1.webp"
-                        class="img-fluid" style="width: 150px;" alt="Generic placeholder image">
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                      <a href="#!" class="float-end text-black"><i class="fas fa-times"></i></a>
-                      <h5 class="text-primary">iPad 9.7 6-gen WiFi 32GB</h5>
-                      <h6 style="color: #9e9e9e;">Color: rose pink</h6>
-                      <div class="d-flex align-items-center">
-                        <p class="fw-bold mb-0 me-5 pe-3">659$</p>
-                        <div class="def-number-input number-input safari_only">
-                          <button onclick="this.parentNode.querySelector('input[type=number]').stepDown()"
-                            class="minus"></button>
-                          <input class="quantity fw-bold text-black" min="0" name="quantity" value="2"
-                            type="number">
-                          <button onclick="this.parentNode.querySelector('input[type=number]').stepUp()"
-                            class="plus"></button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    <div class="px-3 pb-3 text-center">
 
-                  <hr class="mb-4" style="height: 2px; background-color: #1266f1; opacity: 1;">
+                      <h6 class="fw-bold">
+                        Rp <?= $product['price'] ?>
+                      </h6>
 
-                  <div class="d-flex justify-content-between px-x">
-                    <p class="fw-bold">Discount:</p>
-                    <p class="fw-bold">95$</p>
-                  </div>
-                  <div class="d-flex justify-content-between p-2 mb-2" style="background-color: #e1f5fe;">
-                    <h5 class="fw-bold mb-0">Total:</h5>
-                    <h5 class="fw-bold mb-0">2261$</h5>
+                      <p class="text-muted">
+                        Ready Stock <?= $product['qty'] ?> <?= $product['unit'] ?>
+                      </p>
+                    </div>
+                    <div class="px-3 pb-3 d-flex justify-content-center gap-2">
+                      <button type="button" class="btn btn-primary btn-sm btn-add-cart"
+                        data-id="<?= $product['id'] ?>"
+                        data-name="<?= $product['product_name'] ?>"
+                        data-price="<?= $product['price'] ?>"
+                        data-image="assets/uploads/<?= $product['products_image'] ?>">
+                        Add To Cart
+                      </button>
+                    </div>
+
                   </div>
 
                 </div>
-                <div class="col-lg-6 px-5 py-4">
+            <?php
 
-                  <h3 class="mb-5 pt-2 text-center fw-bold text-uppercase">Payment</h3>
+              }
+            }
+            ?>
 
-                  <form class="mb-5">
+          </div>
 
-                    <div class="form-outline mb-5">
-                      <input type="text" id="typeText" class="form-control form-control-lg" siez="17"
-                        value="1234 5678 9012 3457" minlength="19" maxlength="19" />
-                      <label class="form-label" for="typeText">Card Number</label>
-                    </div>
+        </div>
+      <?php
+      }
+      ?>
+    </div>
 
-                    <div class="form-outline mb-5">
-                      <input type="text" id="typeName" class="form-control form-control-lg" siez="17"
-                        value="John Smith" />
-                      <label class="form-label" for="typeName">Name on card</label>
-                    </div>
+  </div>
 
-                    <div class="row">
-                      <div class="col-md-6 mb-5">
-                        <div class="form-outline">
-                          <input type="text" id="typeExp" class="form-control form-control-lg" value="01/22"
-                            size="7" id="exp" minlength="7" maxlength="7" />
-                          <label class="form-label" for="typeExp">Expiration</label>
-                        </div>
-                      </div>
-                      <div class="col-md-6 mb-5">
-                        <div class="form-outline">
-                          <input type="password" id="typeText" class="form-control form-control-lg"
-                            value="&#9679;&#9679;&#9679;" size="1" minlength="3" maxlength="3" />
-                          <label class="form-label" for="typeText">Cvv</label>
-                        </div>
-                      </div>
-                    </div>
 
-                    <p class="mb-5">Lorem ipsum dolor sit amet consectetur, adipisicing elit <a
-                        href="#!">obcaecati sapiente</a>.</p>
+  <div class="col-lg-4 p-4">
 
-                    <button type="button" class="btn btn-primary btn-block btn-lg">Buy now</button>
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
+        <button class="nav-link active">Order Details</button>
+      </li>
+    </ul>
 
-                    <h5 class="fw-bold mb-5" style="position: absolute; bottom: 0;">
-                      <a href="#!"><i class="fas fa-angle-left me-2"></i>Back to shopping</a>
-                    </h5>
+    <div class="card p-3 mt-3 shadow-sm">
+      <div id="order-items" style="max-height: 350px; overflow-y: auto;">
+      </div>
 
-                  </form>
+      <div class="border-top pt-3 mt-3">
 
-                </div>
-              </div>
+        <div class="d-flex justify-content-between">
+          <small>Subtotal</small>
+          <small id="subtotal">Rp 0</small>
+        </div>
 
+        <div class="d-flex justify-content-between">
+          <small>Tax</small>
+          <small id="tax">Rp 0</small>
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <small>Discount</small>
+          <small id="discount">Rp 0</small>
+        </div>
+
+        <div class="d-flex justify-content-between fw-bold fs-5 mt-2">
+          <small>Total</small>
+          <small id="total-bill">Rp 0</small>
+        </div>
+
+      </div>
+
+      <div class="mt-3 d-flex gap-2">
+        <button class="btn btn-success w-100" id="btn-payment" type="button" data-bs-toggle="modal" data-bs-target="#paymentModal">
+          Payment
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h1 class="modal-title fs-5" id="staticBackdropLabel">Detail Book</h1>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body p-4">
+        <div class="row">
+
+          <div class="col-md-5 text-center mb-3 mb-md-0">
+            <img id="modalImage" src="assets/img/default.jpg" alt="Book Image" class="img-fluid rounded-4 shadow-sm" style="max-height: 300px; object-fit: cover;">
+          </div>
+
+          <div class="col-md-7">
+            <h3 id="modalTitle" class="fw-bold text-dark mb-3">Judul Buku</h3>
+
+            <div class="mb-2">
+              <strong>Category:</strong> <span id="modalCategory"></span>
+            </div>
+            <div class="mb-2">
+              <strong>Author:</strong> <span id="modalAuthor"></span>
+            </div>
+            <div class="mb-2">
+              <strong>Publisher:</strong> <span id="modalPublisher"></span>
+            </div>
+            <div class="mb-2">
+              <strong>Year:</strong> <span id="modalYear"></span>
+            </div>
+            <div class="mb-2">
+              <strong>Price:</strong> <span id="modalPrice" class="text-success fw-bold"></span>
+            </div>
+            <div class="mb-2">
+              <strong>Stock:</strong> <span id="modalStock"></span> pcs
+            </div>
+
+            <hr>
+
+            <div>
+              <strong>Description:</strong>
+              <p id="modalDescription" class="text-muted mt-2 mb-0"></p>
             </div>
           </div>
+
         </div>
       </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary rounded-3" id="modalAddToCartBtn">
+          Add To Cart
+        </button>
+      </div>
+
     </div>
-  </section>
-  <!-- End your project here-->
+  </div>
+</div>
 
-  <!-- MDB -->
-  <script type="text/javascript" src="js/mdb.min.js"></script>
-  <!-- Custom scripts -->
-  <script type="text/javascript"></script>
-</body>
+<div class="modal fade" id="paymentModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content rounded-4 shadow-lg border-0">
 
-</html>
+      <div class="modal-header bg-success text-white rounded-top-4">
+        <h1 class="modal-title fs-5" id="paymentModalLabel">Payment Method</h1>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <form action="" method="POST">
+        <input type="text" name="cart-data" id="cart-data" class="form-control">
+        <div class="modal-body p-4">
+
+          <h5 class="mb-3">Pilih Metode Pembayaran</h5>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="w-100">
+                <input type="radio" name="payment_method" value="COD" class="d-none payment-option" checked>
+                <div class="card p-4 shadow-sm border payment-card h-100">
+                  <h4 class="text-success">COD</h4>
+                  <p class="text-muted mb-0">Bayar di tempat saat buku diterima.</p>
+                </div>
+              </label>
+            </div>
+
+            <div class="col-md-6">
+              <label class="w-100">
+                <input type="radio" name="payment_method" value="MIDTRANS" class="d-none payment-option">
+                <div class="card p-4 shadow-sm border payment-card h-100">
+                  <h4 class="text-primary">Midtrans</h4>
+                  <p class="text-muted mb-0">Pembayaran online via payment gateway.</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <hr class="my-4">
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="border rounded-3 p-3 bg-light">
+                <h6 class="fw-bold mb-3">Ringkasan Pembayaran</h6>
+
+                <div class="d-flex justify-content-between mb-2">
+                  <span>Subtotal</span>
+                  <span>Rp 0</span>
+                </div>
+
+                <div class="d-flex justify-content-between mb-2">
+                  <span>Tax</span>
+                  <span>Rp 0</span>
+                </div>
+
+                <div class="d-flex justify-content-between mb-2">
+                  <span>Discount</span>
+                  <span>- Rp 0</span>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-between fw-bold fs-5">
+                  <span>Total</span>
+                  <span>Rp 0</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="alert alert-info rounded-3 mb-0">
+                <strong>Catatan:</strong><br>
+                - Jika memilih <b>COD</b>, pesanan akan langsung diproses.<br>
+                - Jika memilih <b>Midtrans</b>, nanti bisa diarahkan ke payment gateway.
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Close</button>
+          <button type="submit" name="process_payment" class="btn btn-success rounded-3 px-4">
+            Bayar Sekarang
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // looping product Card
+  // document.querySelectorAll('.product-card').forEach(button) => {
+  //   button.addEventListener('click', function() {
+  //     this.getAttribute('data-id');
+  //   })
+  // };
+
+  // event
+  let cart = [];
+
+  document.addEventListener('click', function(e) {
+    if (e.target && e.target.classList.contains('btn-add-cart')) {
+      const id = e.target.getAttribute('data-id');
+      const name = e.target.getAttribute('data-name');
+      const price = e.target.getAttribute('data-price');
+      const image = e.target.getAttribute('data-image');
+      // jika cart nya sama valuenya dengan yg dikiri dari button atau
+      // sudah ada
+      // foreach(cart as item)
+      const extProducts = cart.find(item => item.id === id);
+      if (extProducts) {
+        extProducts.qty += 1;
+      } else {
+        cart.push({
+          id,
+          name,
+          price,
+          image,
+          qty: 1
+        })
+      }
+      renderCart();
+    }
+  })
+
+  function renderCart() {
+    const containerCart = document.getElementById('order-items');
+    containerCart.innerHTML = "";
+
+    if (cart.length === 0) {
+      containerCart.innerHTML = "<p class='text-muted text-center py-3'>Cart Empty</p>"
+      updateCart();
+      return;
+    }
+
+    cart.forEach(value => {
+      const itemHTML =
+        `
+            <div class="card p-2 mb-2 border-0 shadow-sm">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <img class="rounded-circle" src="${value.image}" width="45" height="45" style="object-fit: cover;">
+                    <div>
+                    <div class="fw-semibold">${value.name}</div>
+                        <small class="text-muted">
+                          Rp ${value.price}
+                        </small>
+                    </div>
+                </div>
+                  <a href="#" class="btn btn-sm btn-outline-danger btn-delete" data-id=${value.id}>
+                    X
+                  </a>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center my-3">
+                  <div class="d-flex align-items-center gap-1">
+                    <a href="#" class="btn btn-outline-primary btn-sm btn-minus" data-id=${value.id}> - </a>
+                      <span class="fw-semibold px-2">${value.qty}</span>
+                    <a href="#" class="btn btn-outline-primary btn-sm btn-plus" data-id=${value.id}> + </a>
+                  </div>
+                  <div class="fw-bold">
+                      Rp ${(value.price * value.qty).toLocaleString('id-ID')}
+                  </div>
+                </div>
+            </div>
+      `
+      containerCart.insertAdjacentHTML('beforeend', itemHTML)
+    })
+    updateCart();
+  }
+
+  document.getElementById('order-items').addEventListener('click', function(e) {
+    const id = e.target.getAttribute('data-id');
+    if (!id) return;
+
+    const itemIndex = cart.findIndex(item => item.id === id);
+    if (e.target.classList.contains('btn-plus')) {
+      cart[itemIndex].qty += 1;
+    } else if (e.target.classList.contains('btn-minus')) {
+      // jika di cart qty lebih dari 1
+      if (cart[itemIndex].qty > 1) {
+        cart[itemIndex].qty -= 1;
+      } else {
+        // qty cuma 1 terus mau di minus lagi maka hilang product di cartnya
+        // splice(index, 1)
+        cart.splice(itemIndex, 1)
+      }
+    } else if (e.target.classList.contains('btn-delete')) {
+      cart.splice(itemIndex, 1)
+    }
+    renderCart();
+  })
+
+  function updateCart() {
+    let subtotal = 0;
+    let tax = 0;
+    let discount = 0;
+
+    cart.forEach(item => {
+      subtotal += item.price * item.qty;
+    })
+    tax = subtotal * 0.1;
+    let total = subtotal + tax - discount;
+
+    const formatRupiah = (number) => {
+      return "Rp." + number.toLocaleString('id-ID');
+    }
+
+    document.getElementById('subtotal').innerText = formatRupiah(subtotal);
+    document.getElementById('tax').innerText = formatRupiah(tax);
+    document.getElementById('discount').innerText = formatRupiah(discount);
+    document.getElementById('total-bill').innerText = formatRupiah(total);
+
+    const cartModal = document.querySelector('#paymentModal .border.rounded-3');
+    // jika cart modal terbuka
+    if (cartModal) {
+      const spans = cartModal.querySelectorAll('span');
+      if (spans.length >= 8) {
+        spans[1].innerText = formatRupiah(subtotal);
+        spans[3].innerText = formatRupiah(tax);
+        spans[5].innerText = "-" + formatRupiah(discount);
+        spans[7].innerText = formatRupiah(total);
+      }
+    }
+
+    document.getElementById('cart-data').value = JSON.stringify(cart);
+  }
+
+  document.getElementById('btn-payment').addEventListener('click', () => {
+    if (cart.length === 0) {
+      alert('Cart is empty');
+
+      // stopPropagation(); : modal tidak muncul
+      e.stopPropagation();
+    }
+  })
+</script>
