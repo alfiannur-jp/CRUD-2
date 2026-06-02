@@ -47,7 +47,7 @@ if (isset($_POST['process_payment'])) {
       }
     } else if ($payment_method === 'MIDTRANS') {
       require_once 'vendor/midtrans/midtrans-php/Midtrans.php';
-      \Midtrans\Config::$serverKey = 'Mid-server-PFh7gM462AN1xC602IC4dASs';
+      \Midtrans\Config::$serverKey = $_ENV['MIDTRANS_SERVER_KEY'];
       \Midtrans\Config::$isProduction = false;
       \Midtrans\Config::$isSanitized = true;
       \Midtrans\Config::$is3ds = true;
