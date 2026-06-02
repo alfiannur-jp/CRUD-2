@@ -5,7 +5,84 @@ $categories = mysqli_fetch_all($selectCategory, MYSQLI_ASSOC);
 $selectProduct = mysqli_query($koneksi, "SELECT products.*, categories.category_name FROM products LEFT JOIN categories ON products.category_id = categories.id WHERE products.is_active = 1 ORDER BY id DESC");
 $products = mysqli_fetch_all($selectProduct, MYSQLI_ASSOC);
 
-// where id_category = $categories
+// where id_category = $categories['id_categories'];
+
+// Proses payment
+if (isset($_POST['process_payment'])) {
+  $customer_name  = $_POST['customer_name'];
+  $payment_method = $_POST['payment_method'];
+  $cart_row       = $_POST['cart-data'];
+  $cart_items      = json_decode($cart_row, true);
+
+  if (!empty($cart_items)) {
+    $subtotal = 0;
+    foreach ($cart_items as $item) {
+      $subtotal += $item['price'] * $item['qty'];
+    }
+    $tax        = $subtotal * 0.1;
+    $discount   = 0;
+    $total_bill = $subtotal + $tax - $discount;
+    $order_no   = 'ORD-' . date('Ymd') . '-' . rand(1000, 9999);
+    if ($payment_method === 'CASH') {
+      $payment_status = 'SUCCESS';
+      $insertOrder = mysqli_query($koneksi, "INSERT INTO orders (order_no, customer_name, payment_method, subtotal, tax, discount, total_bill, payment_status) VALUES
+      ('$order_no', '$customer_name', '$payment_method', '$subtotal', '$tax', '$discount', '$total_bill', '$payment_status')");
+      if ($insertOrder) {
+        $order_id = mysqli_insert_id($koneksi);
+        foreach ($cart_items as $item) {
+          $product_id   = $item['id'];
+          $product_name = $item['name'];
+          $price        = $item['price'];
+          $quantity     = $item['qty'];
+          $total_price  = $price * $quantity;
+
+          $insertOrderDetails = mysqli_query($koneksi, "INSERT INTO order_details(order_id, product_id, product_name, price, quantity, total_price) VALUES ('$order_id', '$product_id', '$product_name', '$price', '$quantity', '$total_price')");
+
+          if ($insertOrderDetails) {
+            mysqli_query($koneksi, "UPDATE products SET qty=qty-$quantity WHERE id='$product_id'");
+          }
+        }
+        header("location:?page=transaction");
+        exit();
+      }
+    } else if ($payment_method === 'MIDTRANS') {
+      require_once 'vendor/midtrans/midtrans-php/Midtrans.php';
+      \Midtrans\Config::$serverKey = 'Mid-server-PFh7gM462AN1xC602IC4dASs';
+      \Midtrans\Config::$isProduction = false;
+      \Midtrans\Config::$isSanitized = true;
+      \Midtrans\Config::$is3ds = true;
+
+      $params = [
+        'transaction_details' => [
+          'order_id'     => $order_no,
+          'gross_amount' => (int)$total_bill
+        ],
+        'customer_details' => [
+          'first_name' => $customer_name
+        ],
+      ];
+      $snapToken = \Midtrans\Snap::getSnapToken($params);
+
+      echo "
+      <script>
+      window.snapToken = '$snapToken';
+      window.midtransData = {
+        order_no: '$order_no',
+        customer_name: '$customer_name',
+        payment_method: 'MIDTRANS',
+        subtotal: '$subtotal',
+        tax: '$tax',
+        discount: '$discount',
+        total_bill: '$total_bill',
+        'cart-data': '" . base64_encode($cart_row) . "',
+        payment_status: 'SUCCESS'
+      };
+      </script>
+      ";
+    }
+  }
+}
+
 ?>
 <div class="row">
 
@@ -242,23 +319,27 @@ $products = mysqli_fetch_all($selectProduct, MYSQLI_ASSOC);
       <form action="" method="POST">
         <input type="text" name="cart-data" id="cart-data" class="form-control">
         <div class="modal-body p-4">
+          <div class="mb-3">
+            <label for="" class="form-label">Customer Name</label>
+            <input type="text" class="form-control" name="customer_name" placeholder="Isi nama anda.." required>
+          </div>
 
-          <h5 class="mb-3">Pilih Metode Pembayaran</h5>
+          <h5 class=" mb-3">Pilih Metode Pembayaran</h5>
 
           <div class="row g-3">
             <div class="col-md-6">
               <label class="w-100">
-                <input type="radio" name="payment_method" value="COD" class="d-none payment-option" checked>
+                <input type="radio" name="payment_method" value="CASH" class="payment-option" checked>
                 <div class="card p-4 shadow-sm border payment-card h-100">
-                  <h4 class="text-success">COD</h4>
-                  <p class="text-muted mb-0">Bayar di tempat saat buku diterima.</p>
+                  <h4 class="text-success">Cash</h4>
+                  <p class="text-muted mb-0">Bayar di tempat.</p>
                 </div>
               </label>
             </div>
 
             <div class="col-md-6">
               <label class="w-100">
-                <input type="radio" name="payment_method" value="MIDTRANS" class="d-none payment-option">
+                <input type="radio" name="payment_method" value="MIDTRANS" class="payment-option">
                 <div class="card p-4 shadow-sm border payment-card h-100">
                   <h4 class="text-primary">Midtrans</h4>
                   <p class="text-muted mb-0">Pembayaran online via payment gateway.</p>
@@ -295,14 +376,6 @@ $products = mysqli_fetch_all($selectProduct, MYSQLI_ASSOC);
                   <span>Total</span>
                   <span>Rp 0</span>
                 </div>
-              </div>
-            </div>
-
-            <div class="col-md-6">
-              <div class="alert alert-info rounded-3 mb-0">
-                <strong>Catatan:</strong><br>
-                - Jika memilih <b>COD</b>, pesanan akan langsung diproses.<br>
-                - Jika memilih <b>Midtrans</b>, nanti bisa diarahkan ke payment gateway.
               </div>
             </div>
           </div>
@@ -468,4 +541,47 @@ $products = mysqli_fetch_all($selectProduct, MYSQLI_ASSOC);
       e.stopPropagation();
     }
   })
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // Trigger snap popup. @TODO: Replace TRANSACTION_TOKEN_HERE with your transaction token.
+    // Tutorial to create snap token - https://docs.midtrans.com/reference/backend-integration
+    // Also, use the embedId that you defined in the div above, here.
+    snap.pay(window.snapToken, {
+      onSuccess: function(result) {
+        /* You may add your own implementation here */
+        alert("payment success!");
+        fetch('simpan_transaksi_midtrans.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(window.midtransData)
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              window.open('print_struk.php?order_id=' + data.order_id, '_blank');
+            } else {
+              alert("Pembayaran Gagal!");
+            }
+            window.location.href = '?page=transaction';
+          });
+        // console.log(result);
+      },
+      onPending: function(result) {
+        /* You may add your own implementation here */
+        alert("wating your payment!");
+        console.log(result);
+      },
+      onError: function(result) {
+        /* You may add your own implementation here */
+        alert("payment failed!");
+        console.log(result);
+      },
+      onClose: function() {
+        /* You may add your own implementation here */
+        alert('you closed the popup without finishing the payment');
+      }
+    });
+  });
 </script>
