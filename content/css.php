@@ -31,4 +31,4 @@
 <script src="assets/template/assets/js/config.js"></script>
 <script type="text/javascript"
   src="https://app.sandbox.midtrans.com/snap/snap.js"
-  data-client-key="<?= $_ENV['MIDTRANS_SERVER_KEY'] ?>"></script>
+  data-client-key="Mid-client-AsTceP9gD4_6NUPa"></script>
